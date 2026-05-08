@@ -3,8 +3,8 @@
 
 const STYLE_ID = 'intercom-focus-injected-styles';
 
-// Hide all siblings of conversation-space (conversation list, resize handles, right sidebar)
-const EXPAND_CONVERSATION = `
+// Expand conversation-space to fill its flex container (used by all three groups)
+const EXPAND_SPACE_CSS = `
 :has(> [data-intercom-target="conversation-space"]) > *:not([data-intercom-target="conversation-space"]) {
   display: none !important;
 }
@@ -15,7 +15,10 @@ const EXPAND_CONVERSATION = `
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
-}
+}`;
+
+// Expand the fixed panel to span the full viewport (only when a nav panel is hidden)
+const EXPAND_PANEL_CSS = `
 .full-conversation-panel {
   left: 0 !important;
   right: 0 !important;
@@ -32,7 +35,7 @@ const GROUPS = {
       '[data-primary-nav-container]',
       '.nav__container'
     ],
-    extraCSS: EXPAND_CONVERSATION
+    extraCSS: EXPAND_SPACE_CSS + EXPAND_PANEL_CSS
   },
   inboxLeftNav: {
     label: 'Inbox folder/inbox list sidebar',
@@ -40,7 +43,7 @@ const GROUPS = {
       '[data-intercom-target="inbox-left-nav"]',
       '[data-target="inbox-nav"]'
     ],
-    extraCSS: EXPAND_CONVERSATION
+    extraCSS: EXPAND_SPACE_CSS + EXPAND_PANEL_CSS
   },
   rightSidebar: {
     label: 'Right sidebar (Details / Copilot)',
@@ -48,7 +51,7 @@ const GROUPS = {
       '.inbox2__conversation-details-sidebar',
       '[data-resize-target][data-resize-min-width="300"]'
     ],
-    extraCSS: EXPAND_CONVERSATION + `
+    extraCSS: EXPAND_SPACE_CSS + `
 /* Hide the toggle button that re-opens the sidebar */
 [data-rhsb-toggle-button] {
   display: none !important;
@@ -66,6 +69,7 @@ let inlineStyleObserver = null;
 
 function forceConversationSize() {
   const anyOn = currentSettings.primaryNav || currentSettings.inboxLeftNav || currentSettings.rightSidebar;
+  const navHidden = currentSettings.primaryNav || currentSettings.inboxLeftNav;
 
   const cs = document.querySelector('[data-intercom-target="conversation-space"]');
   if (cs) {
@@ -86,10 +90,10 @@ function forceConversationSize() {
     }
   }
 
-  // Also force the panel itself to span the full viewport
+  // Only span the fixed panel full-viewport when a nav panel is hidden
   const panel = document.querySelector('.full-conversation-panel');
   if (panel) {
-    if (anyOn) {
+    if (navHidden) {
       panel.style.setProperty('left', '0', 'important');
       panel.style.setProperty('right', '0', 'important');
       panel.style.setProperty('width', 'auto', 'important');
@@ -164,10 +168,10 @@ function applyStyles(settings) {
   }
   el.textContent = buildCSS(currentSettings);
 
-  const anyOn = currentSettings.primaryNav || currentSettings.inboxLeftNav || currentSettings.rightSidebar;
+  const navHidden = currentSettings.primaryNav || currentSettings.inboxLeftNav;
   forceConversationSize();
   attachInlineStyleObserver();
-  injectShadowStyles(!!anyOn);
+  injectShadowStyles(!!navHidden);
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
