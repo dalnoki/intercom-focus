@@ -21,7 +21,7 @@ const GROUPS = {
   conversationList: {
     label: 'Conversation list panel',
     selectors: [
-      '[data-intercom-target="conversation-list"]',
+      '[data-intercom-target-conversation-list]',
       '.inbox2__conversation-list-sidebar'
     ]
   },
