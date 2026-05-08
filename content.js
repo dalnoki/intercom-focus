@@ -9,6 +9,9 @@ const EXPAND_CONVERSATION = `
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
+}
+.full-conversation-panel {
+  left: 0 !important;
 }`;
 
 const GROUPS = {
