@@ -3,11 +3,9 @@
 
 const STYLE_ID = 'intercom-focus-injected-styles';
 
-// Expand conversation-space to fill its flex container (used by all three groups)
+// Expand conversation-space within its flex container.
+// Does NOT use :has() — that rule hid all siblings (too aggressive).
 const EXPAND_SPACE_CSS = `
-:has(> [data-intercom-target="conversation-space"]) > *:not([data-intercom-target="conversation-space"]) {
-  display: none !important;
-}
 [data-intercom-target="conversation-space"] {
   flex-grow: 1 !important;
   flex-shrink: 1 !important;
@@ -17,25 +15,14 @@ const EXPAND_SPACE_CSS = `
   min-width: 0 !important;
 }`;
 
-// Expand the fixed panel to span the full viewport (only when a nav panel is hidden)
-const EXPAND_PANEL_CSS = `
-.full-conversation-panel {
-  left: 0 !important;
-  right: 0 !important;
-  width: auto !important;
-}
-.inbox2__conversation-page {
-  width: 100% !important;
-}`;
-
 const GROUPS = {
   primaryNav: {
     label: 'Primary Nav (left icon rail)',
     selectors: [
       '[data-primary-nav-container]',
       '.nav__container'
-    ],
-    extraCSS: EXPAND_SPACE_CSS + EXPAND_PANEL_CSS
+    ]
+    // No extraCSS — just hide the rail, don't expand the panel
   },
   inboxLeftNav: {
     label: 'Inbox folder/inbox list sidebar',
@@ -43,7 +30,7 @@ const GROUPS = {
       '[data-intercom-target="inbox-left-nav"]',
       '[data-target="inbox-nav"]'
     ],
-    extraCSS: EXPAND_SPACE_CSS + EXPAND_PANEL_CSS
+    extraCSS: EXPAND_SPACE_CSS
   },
   rightSidebar: {
     label: 'Right sidebar (Details / Copilot)',
@@ -52,7 +39,6 @@ const GROUPS = {
       '[data-resize-target][data-resize-min-width="300"]'
     ],
     extraCSS: EXPAND_SPACE_CSS + `
-/* Hide the toggle button that re-opens the sidebar */
 [data-rhsb-toggle-button] {
   display: none !important;
 }`
@@ -68,52 +54,40 @@ let currentSettings = {};
 let inlineStyleObserver = null;
 
 function forceConversationSize() {
-  const anyOn = currentSettings.primaryNav || currentSettings.inboxLeftNav || currentSettings.rightSidebar;
-  const navHidden = currentSettings.primaryNav || currentSettings.inboxLeftNav;
+  // Only fight Intercom's resize JS when an inner-panel toggle is on
+  const expandSpace = currentSettings.inboxLeftNav || currentSettings.rightSidebar;
 
   const cs = document.querySelector('[data-intercom-target="conversation-space"]');
-  if (cs) {
-    if (anyOn) {
-      cs.style.setProperty('flex-basis', '100%', 'important');
-      cs.style.setProperty('flex-grow', '1', 'important');
-      cs.style.setProperty('flex-shrink', '1', 'important');
-      cs.style.setProperty('min-width', '0', 'important');
-      cs.style.setProperty('width', '100%', 'important');
-      cs.style.setProperty('max-width', '100%', 'important');
-    } else {
-      cs.style.removeProperty('flex-basis');
-      cs.style.removeProperty('flex-grow');
-      cs.style.removeProperty('flex-shrink');
-      cs.style.removeProperty('min-width');
-      cs.style.removeProperty('width');
-      cs.style.removeProperty('max-width');
-    }
-  }
+  if (!cs) return;
 
-  // Only span the fixed panel full-viewport when a nav panel is hidden
-  const panel = document.querySelector('.full-conversation-panel');
-  if (panel) {
-    if (navHidden) {
-      panel.style.setProperty('left', '0', 'important');
-      panel.style.setProperty('right', '0', 'important');
-      panel.style.setProperty('width', 'auto', 'important');
-    } else {
-      panel.style.removeProperty('left');
-      panel.style.removeProperty('right');
-      panel.style.removeProperty('width');
-    }
+  if (expandSpace) {
+    cs.style.setProperty('flex-basis', '100%', 'important');
+    cs.style.setProperty('flex-grow', '1', 'important');
+    cs.style.setProperty('flex-shrink', '1', 'important');
+    cs.style.setProperty('min-width', '0', 'important');
+    cs.style.setProperty('width', '100%', 'important');
+    cs.style.setProperty('max-width', '100%', 'important');
+  } else {
+    cs.style.removeProperty('flex-basis');
+    cs.style.removeProperty('flex-grow');
+    cs.style.removeProperty('flex-shrink');
+    cs.style.removeProperty('min-width');
+    cs.style.removeProperty('width');
+    cs.style.removeProperty('max-width');
   }
 }
 
 function attachInlineStyleObserver() {
   if (inlineStyleObserver) inlineStyleObserver.disconnect();
+
+  const expandSpace = currentSettings.inboxLeftNav || currentSettings.rightSidebar;
+  if (!expandSpace) return; // no need to fight Intercom when nothing is hidden
+
   inlineStyleObserver = new MutationObserver(() => {
     forceConversationSize();
   });
   const cs = document.querySelector('[data-intercom-target="conversation-space"]');
   if (cs) inlineStyleObserver.observe(cs, { attributes: true, attributeFilter: ['style'] });
-  const panel = document.querySelector('.full-conversation-panel');
-  if (panel) inlineStyleObserver.observe(panel, { attributes: true, attributeFilter: ['style'] });
 }
 
 // ─── CSS Builder ──────────────────────────────────────────────────────────────
@@ -168,10 +142,10 @@ function applyStyles(settings) {
   }
   el.textContent = buildCSS(currentSettings);
 
-  const navHidden = currentSettings.primaryNav || currentSettings.inboxLeftNav;
+  const expandSpace = currentSettings.inboxLeftNav || currentSettings.rightSidebar;
   forceConversationSize();
   attachInlineStyleObserver();
-  injectShadowStyles(!!navHidden);
+  injectShadowStyles(!!expandSpace);
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
