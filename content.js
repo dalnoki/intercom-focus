@@ -107,6 +107,33 @@ function buildCSS(settings) {
   return rules.join('\n\n');
 }
 
+// ─── Shadow DOM injection ─────────────────────────────────────────────────────
+// The conversation stream content lives inside #teammate-app-react's shadow
+// root with class "mx-auto max-w-[1000px]". Regular CSS can't reach it, so
+// we inject a <style> directly into the shadow root.
+
+const SHADOW_STYLE_ID = 'intercom-focus-shadow-styles';
+
+function injectShadowStyles(enable) {
+  const host = document.getElementById('teammate-app-react');
+  if (!host || !host.shadowRoot) return;
+  const root = host.shadowRoot;
+  let el = root.getElementById(SHADOW_STYLE_ID);
+  if (enable) {
+    if (!el) {
+      el = document.createElement('style');
+      el.id = SHADOW_STYLE_ID;
+      root.appendChild(el);
+    }
+    el.textContent = `
+      .mx-auto { margin-left: 0 !important; margin-right: 0 !important; }
+      [class*="max-w-[1000px]"] { max-width: 100% !important; }
+    `;
+  } else {
+    if (el) el.remove();
+  }
+}
+
 function applyStyles(settings) {
   currentSettings = settings || {};
 
@@ -118,8 +145,10 @@ function applyStyles(settings) {
   }
   el.textContent = buildCSS(currentSettings);
 
+  const anyOn = currentSettings.primaryNav || currentSettings.inboxLeftNav || currentSettings.rightSidebar;
   forceConversationSize();
   attachInlineStyleObserver();
+  injectShadowStyles(!!anyOn);
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
