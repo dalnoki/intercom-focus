@@ -3,11 +3,15 @@
 
 const STYLE_ID = 'intercom-focus-injected-styles';
 
+// Hide all siblings of conversation-space (conversation list, resize handles, right sidebar)
 const EXPAND_CONVERSATION = `
+:has(> [data-intercom-target="conversation-space"]) > *:not([data-intercom-target="conversation-space"]) {
+  display: none !important;
+}
 [data-intercom-target="conversation-space"] {
   flex-grow: 1 !important;
   flex-shrink: 1 !important;
-  flex-basis: 0% !important;
+  flex-basis: 100% !important;
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
@@ -84,7 +88,6 @@ function attachInlineStyleObserver() {
   const el = document.querySelector('[data-intercom-target="conversation-space"]');
   if (!el) return;
   inlineStyleObserver = new MutationObserver(() => {
-    // Intercom just touched the inline style — override it immediately
     forceConversationSize();
   });
   inlineStyleObserver.observe(el, { attributes: true, attributeFilter: ['style'] });
@@ -141,7 +144,6 @@ const observer = new MutationObserver(() => {
         applyStyles(settings || {});
       });
     } else {
-      // Re-attach inline observer in case the conversation-space element was re-created
       attachInlineStyleObserver();
     }
   }, 300);
