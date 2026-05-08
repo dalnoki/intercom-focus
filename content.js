@@ -5,7 +5,8 @@ const STYLE_ID = 'intercom-focus-injected-styles';
 
 const EXPAND_CONVERSATION = `
 [data-intercom-target="conversation-space"] {
-  flex: 1 1 auto !important;
+  flex: 1 !important;
+  width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
 }`;
