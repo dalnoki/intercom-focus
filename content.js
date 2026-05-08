@@ -3,28 +3,29 @@
 
 const STYLE_ID = 'intercom-focus-injected-styles';
 
+const EXPAND_CONVERSATION = `
+[data-intercom-target="conversation-space"] {
+  flex: 1 1 auto !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}`;
+
 const GROUPS = {
   primaryNav: {
     label: 'Primary Nav (left icon rail)',
     selectors: [
       '[data-primary-nav-container]',
       '.nav__container'
-    ]
+    ],
+    extraCSS: EXPAND_CONVERSATION
   },
   inboxLeftNav: {
     label: 'Inbox folder/inbox list sidebar',
     selectors: [
       '[data-intercom-target="inbox-left-nav"]',
       '[data-target="inbox-nav"]'
-    ]
-  },
-  conversationList: {
-    label: 'Conversation list panel',
-    selectors: [
-      '[data-intercom-target-conversation-list]',
-      '[data-inbox-conversations-table]',
-      '.inbox2__conversation-list-sidebar'
-    ]
+    ],
+    extraCSS: EXPAND_CONVERSATION
   },
   rightSidebar: {
     label: 'Right sidebar (Details / Copilot)',
@@ -32,18 +33,7 @@ const GROUPS = {
       '.inbox2__conversation-details-sidebar',
       '[data-resize-target][data-resize-min-width="300"]'
     ],
-    extraCSS: `
-/* Expand conversation stream to fill freed space */
-.inbox2__conversation-page {
-  width: 100% !important;
-  max-width: 100% !important;
-  flex: 1 1 100% !important;
-  min-width: 0 !important;
-}
-.inbox2__conversation-page .inbox2__conversation-stream {
-  flex: 1 1 auto !important;
-  max-width: 100% !important;
-}
+    extraCSS: EXPAND_CONVERSATION + `
 /* Hide the toggle button that re-opens the sidebar */
 [data-rhsb-toggle-button] {
   display: none !important;

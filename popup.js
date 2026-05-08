@@ -1,4 +1,4 @@
-const KEYS = ['primaryNav', 'inboxLeftNav', 'conversationList', 'rightSidebar'];
+const KEYS = ['primaryNav', 'inboxLeftNav', 'rightSidebar'];
 
 chrome.storage.sync.get('settings', ({ settings }) => {
   const s = settings || {};
