@@ -3,8 +3,7 @@
 
 const STYLE_ID = 'intercom-focus-injected-styles';
 
-// Expand conversation-space within its flex container.
-// Does NOT use :has() — that rule hid all siblings (too aggressive).
+// Expand conversation-space within its flex container (for inboxLeftNav / rightSidebar).
 const EXPAND_SPACE_CSS = `
 [data-intercom-target="conversation-space"] {
   flex-grow: 1 !important;
@@ -15,14 +14,22 @@ const EXPAND_SPACE_CSS = `
   min-width: 0 !important;
 }`;
 
+// Shift the fixed panel to the left edge when the nav rail is hidden.
+// Does NOT set right:0 or width:auto — panel stays its natural width,
+// it just no longer has a gap where the nav rail was.
+const RECLAIM_NAV_CSS = `
+.full-conversation-panel {
+  left: 0 !important;
+}`;
+
 const GROUPS = {
   primaryNav: {
     label: 'Primary Nav (left icon rail)',
     selectors: [
       '[data-primary-nav-container]',
       '.nav__container'
-    ]
-    // No extraCSS — just hide the rail, don't expand the panel
+    ],
+    extraCSS: RECLAIM_NAV_CSS
   },
   inboxLeftNav: {
     label: 'Inbox folder/inbox list sidebar',
@@ -46,34 +53,44 @@ const GROUPS = {
 };
 
 // ─── Inline-style override ────────────────────────────────────────────────────
-// Intercom's resize JS continuously rewrites flex-basis as an inline style.
-// CSS !important can't beat a JS assignment, so we watch the attribute and
+// Intercom's resize JS continuously rewrites flex-basis (on conversation-space)
+// and left (on full-conversation-panel) as inline styles.
+// CSS !important can't beat a JS assignment, so we watch the attributes and
 // forcibly re-apply our values via setProperty('…', '…', 'important').
 
 let currentSettings = {};
 let inlineStyleObserver = null;
 
-function forceConversationSize() {
-  // Only fight Intercom's resize JS when an inner-panel toggle is on
+function forceStyles() {
   const expandSpace = currentSettings.inboxLeftNav || currentSettings.rightSidebar;
+  const reclaimNav  = currentSettings.primaryNav;
 
   const cs = document.querySelector('[data-intercom-target="conversation-space"]');
-  if (!cs) return;
+  if (cs) {
+    if (expandSpace) {
+      cs.style.setProperty('flex-basis', '100%', 'important');
+      cs.style.setProperty('flex-grow',  '1',    'important');
+      cs.style.setProperty('flex-shrink','1',    'important');
+      cs.style.setProperty('min-width',  '0',    'important');
+      cs.style.setProperty('width',      '100%', 'important');
+      cs.style.setProperty('max-width',  '100%', 'important');
+    } else {
+      cs.style.removeProperty('flex-basis');
+      cs.style.removeProperty('flex-grow');
+      cs.style.removeProperty('flex-shrink');
+      cs.style.removeProperty('min-width');
+      cs.style.removeProperty('width');
+      cs.style.removeProperty('max-width');
+    }
+  }
 
-  if (expandSpace) {
-    cs.style.setProperty('flex-basis', '100%', 'important');
-    cs.style.setProperty('flex-grow', '1', 'important');
-    cs.style.setProperty('flex-shrink', '1', 'important');
-    cs.style.setProperty('min-width', '0', 'important');
-    cs.style.setProperty('width', '100%', 'important');
-    cs.style.setProperty('max-width', '100%', 'important');
-  } else {
-    cs.style.removeProperty('flex-basis');
-    cs.style.removeProperty('flex-grow');
-    cs.style.removeProperty('flex-shrink');
-    cs.style.removeProperty('min-width');
-    cs.style.removeProperty('width');
-    cs.style.removeProperty('max-width');
+  const panel = document.querySelector('.full-conversation-panel');
+  if (panel) {
+    if (reclaimNav) {
+      panel.style.setProperty('left', '0', 'important');
+    } else {
+      panel.style.removeProperty('left');
+    }
   }
 }
 
@@ -81,13 +98,19 @@ function attachInlineStyleObserver() {
   if (inlineStyleObserver) inlineStyleObserver.disconnect();
 
   const expandSpace = currentSettings.inboxLeftNav || currentSettings.rightSidebar;
-  if (!expandSpace) return; // no need to fight Intercom when nothing is hidden
+  const reclaimNav  = currentSettings.primaryNav;
+  if (!expandSpace && !reclaimNav) return;
 
-  inlineStyleObserver = new MutationObserver(() => {
-    forceConversationSize();
-  });
-  const cs = document.querySelector('[data-intercom-target="conversation-space"]');
-  if (cs) inlineStyleObserver.observe(cs, { attributes: true, attributeFilter: ['style'] });
+  inlineStyleObserver = new MutationObserver(() => forceStyles());
+
+  if (expandSpace) {
+    const cs = document.querySelector('[data-intercom-target="conversation-space"]');
+    if (cs) inlineStyleObserver.observe(cs, { attributes: true, attributeFilter: ['style'] });
+  }
+  if (reclaimNav) {
+    const panel = document.querySelector('.full-conversation-panel');
+    if (panel) inlineStyleObserver.observe(panel, { attributes: true, attributeFilter: ['style'] });
+  }
 }
 
 // ─── CSS Builder ──────────────────────────────────────────────────────────────
@@ -96,9 +119,7 @@ function buildCSS(settings) {
   for (const [key, group] of Object.entries(GROUPS)) {
     if (settings[key] === true) {
       rules.push(group.selectors.join(',\n') + ' {\n  display: none !important;\n}');
-      if (group.extraCSS) {
-        rules.push(group.extraCSS);
-      }
+      if (group.extraCSS) rules.push(group.extraCSS);
     }
   }
   return rules.join('\n\n');
@@ -142,10 +163,11 @@ function applyStyles(settings) {
   }
   el.textContent = buildCSS(currentSettings);
 
-  const expandSpace = currentSettings.inboxLeftNav || currentSettings.rightSidebar;
-  forceConversationSize();
+  forceStyles();
   attachInlineStyleObserver();
-  injectShadowStyles(!!expandSpace);
+
+  const anyOn = currentSettings.primaryNav || currentSettings.inboxLeftNav || currentSettings.rightSidebar;
+  injectShadowStyles(!!anyOn);
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
