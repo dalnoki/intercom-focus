@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intercom Focus</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 280px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+      background: #fff;
+      color: #1a1a1a;
+    }
+
+    header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    header h1 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    header h1 .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #6366f1;
+      flex-shrink: 0;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid #f2f2f2;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .toggle-row:hover { background: #f8f8f8; }
+    .toggle-row:last-child { border-bottom: none; }
+
+    .toggle-label {
+      font-size: 13px;
+      color: #2d2d2d;
+      user-select: none;
+    }
+
+    .switch {
+      position: relative;
+      width: 34px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .switch input { display: none; }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: #d1d5db;
+      border-radius: 20px;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+
+    .slider::before {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      left: 3px;
+      top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .slider { background: #6366f1; }
+    input:checked + .slider::before { transform: translateX(14px); }
+
+    footer {
+      padding: 10px 16px;
+      border-top: 1px solid #e8e8e8;
+      font-size: 11px;
+      color: #aaa;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>
+    <span class="dot"></span>
+    Intercom Focus
+  </h1>
+</header>
+
+<label class="toggle-row" data-key="primaryNav">
+  <span class="toggle-label">Primary nav rail</span>
+  <span class="switch"><input type="checkbox" id="primaryNav"><span class="slider"></span></span>
+</label>
+
+<label class="toggle-row" data-key="inboxLeftNav">
+  <span class="toggle-label">Inbox folder list</span>
+  <span class="switch"><input type="checkbox" id="inboxLeftNav"><span class="slider"></span></span>
+</label>
+
+<label class="toggle-row" data-key="conversationList">
+  <span class="toggle-label">Conversation list</span>
+  <span class="switch"><input type="checkbox" id="conversationList"><span class="slider"></span></span>
+</label>
+
+<label class="toggle-row" data-key="rightSidebar">
+  <span class="toggle-label">Right sidebar (Details / Copilot)</span>
+  <span class="switch"><input type="checkbox" id="rightSidebar"><span class="slider"></span></span>
+</label>
+
+<footer>Changes apply instantly on Intercom tabs</footer>
+
+<script src="popup.js"></script>
+</body>
+</html>

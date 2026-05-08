@@ -1,0 +1,111 @@
+// Intercom Focus — Content Script
+// Selectors verified from actual Intercom DOM (May 2026)
+
+const STYLE_ID = 'intercom-focus-injected-styles';
+
+const GROUPS = {
+  primaryNav: {
+    label: 'Primary Nav (left icon rail)',
+    selectors: [
+      '[data-primary-nav-container]',
+      '.nav__container'
+    ]
+  },
+  inboxLeftNav: {
+    label: 'Inbox folder/inbox list sidebar',
+    selectors: [
+      '[data-intercom-target="inbox-left-nav"]',
+      '[data-target="inbox-nav"]'
+    ]
+  },
+  conversationList: {
+    label: 'Conversation list panel',
+    selectors: [
+      '[data-intercom-target="conversation-list"]',
+      '.inbox2__conversation-list-sidebar'
+    ]
+  },
+  rightSidebar: {
+    label: 'Right sidebar (Details / Copilot)',
+    selectors: [
+      '.inbox2__conversation-details-sidebar',
+      '[data-resize-target][data-resize-min-width="300"]'
+    ],
+    extraCSS: `
+/* Expand conversation stream to fill freed space */
+.inbox2__conversation-page {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 1 100% !important;
+  min-width: 0 !important;
+}
+.inbox2__conversation-page .inbox2__conversation-stream {
+  flex: 1 1 auto !important;
+  max-width: 100% !important;
+}
+/* Hide the toggle button that re-opens the sidebar */
+[data-rhsb-toggle-button] {
+  display: none !important;
+}`
+  }
+};
+
+// ─── CSS Builder ──────────────────────────────────────────────────────────────
+function buildCSS(settings) {
+  const rules = [];
+  for (const [key, group] of Object.entries(GROUPS)) {
+    if (settings[key] === true) {
+      rules.push(group.selectors.join(',\n') + ' {\n  display: none !important;\n}');
+      if (group.extraCSS) {
+        rules.push(group.extraCSS);
+      }
+    }
+  }
+  return rules.join('\n\n');
+}
+
+function applyStyles(settings) {
+  let el = document.getElementById(STYLE_ID);
+  if (!el) {
+    el = document.createElement('style');
+    el.id = STYLE_ID;
+    (document.head || document.documentElement).appendChild(el);
+  }
+  el.textContent = buildCSS(settings);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function init() {
+  chrome.storage.sync.get('settings', ({ settings }) => {
+    applyStyles(settings || {});
+  });
+}
+
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.settings) {
+    applyStyles(changes.settings.newValue || {});
+  }
+});
+
+let debounceTimer = null;
+const observer = new MutationObserver(() => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    if (!document.getElementById(STYLE_ID)) {
+      chrome.storage.sync.get('settings', ({ settings }) => {
+        applyStyles(settings || {});
+      });
+    }
+  }, 300);
+});
+
+function startObserver() {
+  observer.observe(document.body, { childList: true, subtree: false });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => { init(); startObserver(); });
+} else {
+  init();
+  startObserver();
+}
