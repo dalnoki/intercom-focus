@@ -3,7 +3,7 @@
 
 const STYLE_ID = 'intercom-focus-injected-styles';
 
-// Expand conversation-space within its flex container (for inboxLeftNav / rightSidebar).
+// Expand conversation-space within its flex container (inboxLeftNav / rightSidebar).
 const EXPAND_SPACE_CSS = `
 [data-intercom-target="conversation-space"] {
   flex-grow: 1 !important;
@@ -14,20 +14,21 @@ const EXPAND_SPACE_CSS = `
   min-width: 0 !important;
 }`;
 
-// Shift the fixed panel to the left edge when the nav rail is hidden.
-// Does NOT set right:0 or width:auto — panel stays its natural width,
-// it just no longer has a gap where the nav rail was.
+// When the nav rail is hidden, shift the fixed panel to left:0 and clear the
+// JS-set width so it spans the full viewport (left:0 + right:0 = full width).
 const RECLAIM_NAV_CSS = `
 .full-conversation-panel {
   left: 0 !important;
+  right: 0 !important;
+  width: auto !important;
 }`;
 
 const GROUPS = {
   primaryNav: {
     label: 'Primary Nav (left icon rail)',
     selectors: [
-      '[data-primary-nav-container]',
-      '.nav__container'
+      '[data-primary-nav-container]'
+      // .nav__container intentionally omitted — too broad, also matches inbox nav
     ],
     extraCSS: RECLAIM_NAV_CSS
   },
@@ -53,10 +54,9 @@ const GROUPS = {
 };
 
 // ─── Inline-style override ────────────────────────────────────────────────────
-// Intercom's resize JS continuously rewrites flex-basis (on conversation-space)
-// and left (on full-conversation-panel) as inline styles.
-// CSS !important can't beat a JS assignment, so we watch the attributes and
-// forcibly re-apply our values via setProperty('…', '…', 'important').
+// Intercom's resize JS continuously rewrites flex-basis (conversation-space)
+// and left/width (full-conversation-panel) as inline styles.
+// CSS !important can't beat a live JS assignment, so we watch and re-apply.
 
 let currentSettings = {};
 let inlineStyleObserver = null;
@@ -87,9 +87,11 @@ function forceStyles() {
   const panel = document.querySelector('.full-conversation-panel');
   if (panel) {
     if (reclaimNav) {
-      panel.style.setProperty('left', '0', 'important');
+      panel.style.setProperty('left',  '0',    'important');
+      panel.style.setProperty('width', 'auto', 'important');
     } else {
       panel.style.removeProperty('left');
+      panel.style.removeProperty('width');
     }
   }
 }
