@@ -5,13 +5,18 @@ const STYLE_ID = 'intercom-focus-injected-styles';
 
 const EXPAND_CONVERSATION = `
 [data-intercom-target="conversation-space"] {
-  flex: 1 !important;
+  flex-grow: 1 !important;
+  flex-shrink: 1 !important;
+  flex-basis: 0% !important;
   width: 100% !important;
   max-width: 100% !important;
   min-width: 0 !important;
 }
 .full-conversation-panel {
   left: 0 !important;
+}
+.inbox2__conversation-page {
+  width: 100% !important;
 }`;
 
 const GROUPS = {
